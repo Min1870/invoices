@@ -1,7 +1,7 @@
 "use client";
+import { LoaderCircle } from "lucide-react";
 import { useFormStatus } from "react-dom";
 import { Button } from "./ui/button";
-import { LoaderCircle } from "lucide-react";
 
 const SubmitButton = () => {
   const { pending } = useFormStatus();
