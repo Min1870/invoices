@@ -1,7 +1,7 @@
 import { db } from "@/db";
-import { Invoices } from "@/db/schema";
+import { Customers, Invoices } from "@/db/schema";
 import { auth } from "@clerk/nextjs/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { notFound } from "next/navigation";
 
 import Invoice from "./invoice";
@@ -11,7 +11,7 @@ interface Props {
 }
 
 export default async function InvoiceDetailPage({ params }: Props) {
-  const { userId } = await auth();
+  const { userId, orgId } = await auth();
   if (!userId) return;
 
   const { id } = await params;
@@ -21,15 +21,39 @@ export default async function InvoiceDetailPage({ params }: Props) {
     throw new Error("Invalid Invoice ID");
   }
 
-  const [result] = await db
-    .select()
-    .from(Invoices)
-    .where(and(eq(Invoices.id, invoiceId), eq(Invoices.userId, userId)))
-    .limit(1);
+  let result;
+  if (orgId) {
+    [result] = await db
+      .select()
+      .from(Invoices)
+      .innerJoin(Customers, eq(Invoices.customerId, Customers.id))
+      .where(
+        and(eq(Invoices.id, invoiceId), eq(Invoices.organizationId, orgId))
+      )
+      .limit(1);
+  } else {
+    [result] = await db
+      .select()
+      .from(Invoices)
+      .innerJoin(Customers, eq(Invoices.customerId, Customers.id))
+      .where(
+        and(
+          eq(Invoices.id, invoiceId),
+          eq(Invoices.userId, userId),
+          isNull(Invoices.organizationId)
+        )
+      )
+      .limit(1);
+  }
 
   if (!result) {
     notFound();
   }
 
-  return <Invoice invoice={result} />;
+  const invoice = {
+    ...result.invoices,
+    customer: result.customers,
+  };
+
+  return <Invoice invoice={invoice} />;
 }

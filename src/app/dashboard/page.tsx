@@ -11,21 +11,38 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { db } from "@/db";
-import { Invoices } from "@/db/schema";
+import { Customers, Invoices } from "@/db/schema";
 import { cn } from "@/lib/utils";
 import { CirclePlus } from "lucide-react";
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 export default async function DashboardPage() {
-  const { userId } = await auth();
+  const { userId, orgId } = await auth();
   if (!userId) return;
 
-  const results = await db
-    .select()
-    .from(Invoices)
-    .where(eq(Invoices.userId, userId));
+  let results;
+  if (orgId) {
+    results = await db
+      .select()
+      .from(Invoices)
+      .innerJoin(Customers, eq(Invoices.customerId, Customers.id))
+      .where(eq(Invoices.organizationId, orgId));
+  } else {
+    results = await db
+      .select()
+      .from(Invoices)
+      .innerJoin(Customers, eq(Invoices.customerId, Customers.id))
+      .where(and(eq(Invoices.userId, userId), isNull(Invoices.organizationId)));
+  }
+
+  const invoices = results?.map(({ invoices, customers }) => {
+    return {
+      ...invoices,
+      customer: customers,
+    };
+  });
 
   return (
     <main className="h-full">
@@ -52,7 +69,7 @@ export default async function DashboardPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {results.map((result) => (
+            {invoices.map((result) => (
               <TableRow key={result.id}>
                 <TableCell className="font-medium text-left p-0">
                   <Link
@@ -67,12 +84,12 @@ export default async function DashboardPage() {
                     href={`/invoices/${result.id}`}
                     className="font-semibold p-4 block"
                   >
-                    Philips J. Frey
+                    {result.customer.name}
                   </Link>
                 </TableCell>
                 <TableCell className="text-left p-0">
                   <Link className="p-4 block" href={`/invoices/${result.id}`}>
-                    frey@gmail.com
+                    {result.customer.email}
                   </Link>
                 </TableCell>
                 <TableCell className="text-center p-0">
