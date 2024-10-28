@@ -1,5 +1,6 @@
 "use client";
 import { createInvoice } from "@/app/actions";
+import Container from "@/components/Container";
 import SubmitButton from "@/components/SubmitButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,46 +20,48 @@ export default function CreateInvoicePage() {
   };
 
   return (
-    <main className="flex flex-col justify-center h-full gap-6 max-w-5xl mx-auto my-12">
-      <div className="flex justify-between">
-        <h1 className="text-3xl font-bold">Create Invoice</h1>
-      </div>
-      <Form
-        action={createInvoice}
-        onSubmit={handleOnSubmit}
-        className="grid gap-4 max-w-xs"
-      >
-        <div>
-          <Label className="block font-semibold text-sm mb-2" htmlFor="name">
-            Billing Name
-          </Label>
-          <Input id="name" name="name" type="text" />
+    <main className="h-full">
+      <Container>
+        <div className="flex justify-between mb-6 ">
+          <h1 className="text-3xl font-bold">Create Invoice</h1>
         </div>
-        <div>
-          <Label className="block font-semibold text-sm mb-2" htmlFor="email">
-            Billing Email
-          </Label>
-          <Input id="email" name="email" type="email" />
-        </div>
-        <div>
-          <Label className="block font-semibold text-sm mb-2" htmlFor="value">
-            Value
-          </Label>
-          <Input id="value" name="value" type="text" />
-        </div>
-        <div>
-          <Label
-            className="block font-semibold text-sm mb-2"
-            htmlFor="description"
-          >
-            Description
-          </Label>
-          <Textarea id="description" name="description"></Textarea>
-        </div>
-        <div>
-          <SubmitButton />
-        </div>
-      </Form>
+        <Form
+          action={createInvoice}
+          onSubmit={handleOnSubmit}
+          className="grid gap-4 max-w-xs"
+        >
+          <div>
+            <Label className="block font-semibold text-sm mb-2" htmlFor="name">
+              Billing Name
+            </Label>
+            <Input id="name" name="name" type="text" />
+          </div>
+          <div>
+            <Label className="block font-semibold text-sm mb-2" htmlFor="email">
+              Billing Email
+            </Label>
+            <Input id="email" name="email" type="email" />
+          </div>
+          <div>
+            <Label className="block font-semibold text-sm mb-2" htmlFor="value">
+              Value
+            </Label>
+            <Input id="value" name="value" type="text" />
+          </div>
+          <div>
+            <Label
+              className="block font-semibold text-sm mb-2"
+              htmlFor="description"
+            >
+              Description
+            </Label>
+            <Textarea id="description" name="description"></Textarea>
+          </div>
+          <div>
+            <SubmitButton />
+          </div>
+        </Form>
+      </Container>
     </main>
   );
 }
