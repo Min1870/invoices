@@ -1,21 +1,8 @@
 "use client";
+import { deleteInvoiceAction, updateStatusAction } from "@/app/actions";
 import Container from "@/components/Container";
 import { Badge } from "@/components/ui/badge";
-import { Customers, Invoices } from "@/db/schema";
-import { cn } from "@/lib/utils";
-import { useOptimistic } from "react";
-
-import { deleteInvoiceAction, updateStatusAction } from "@/app/actions";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { AVAILABLE_STATUSES } from "@/data/invoices";
-import { ChevronDown, Ellipsis, Trash2 } from "lucide-react";
-
 import {
   Dialog,
   DialogContent,
@@ -25,6 +12,19 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { AVAILABLE_STATUSES } from "@/data/invoices";
+import { Customers, Invoices } from "@/db/schema";
+import { cn } from "@/lib/utils";
+import { ChevronDown, CreditCard, Ellipsis, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useOptimistic } from "react";
 
 interface InvoiceProps {
   invoice: typeof Invoices.$inferSelect & {
@@ -33,6 +33,8 @@ interface InvoiceProps {
 }
 
 export default function Invoice({ invoice }: InvoiceProps) {
+  const router = useRouter();
+
   const [currentStatus, setCurrentStatus] = useOptimistic(
     invoice.status,
     (state, newStatus) => {
@@ -45,6 +47,7 @@ export default function Invoice({ invoice }: InvoiceProps) {
     setCurrentStatus(formData.get("status"));
     try {
       await updateStatusAction(formData);
+      router.refresh();
     } catch (e) {
       setCurrentStatus(originalStatus);
     }
@@ -104,6 +107,15 @@ export default function Invoice({ invoice }: InvoiceProps) {
                         Delete Invoice
                       </button>
                     </DialogTrigger>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Link
+                      href={`/invoices/${invoice.id}/payment`}
+                      className="flex gap-2 items-center"
+                    >
+                      <CreditCard className="w-4 h-auto" />
+                      Payment
+                    </Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
