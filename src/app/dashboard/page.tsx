@@ -13,14 +13,25 @@ import {
 import { db } from "@/db";
 import { Customers, Invoices } from "@/db/schema";
 import { cn } from "@/lib/utils";
-import { CirclePlus } from "lucide-react";
-import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { and, eq, isNull } from "drizzle-orm";
+import { CirclePlus } from "lucide-react";
+import Link from "next/link";
+import { Suspense } from "react";
+import Pagination from "../../components/Pagination";
 
-export default async function DashboardPage() {
+interface DashboardProps {
+  searchParams: Promise<{ page: string }>;
+}
+
+export default async function DashboardPage({ searchParams }: DashboardProps) {
   const { userId, orgId } = await auth();
   if (!userId) return;
+  const INVOICE_PER_PAGE = 10;
+  const { page } = await searchParams;
+
+  const currentPage = page ? parseInt(page) : 1;
+  const offset = (currentPage - 1) * INVOICE_PER_PAGE;
 
   let results;
   if (orgId) {
@@ -28,13 +39,17 @@ export default async function DashboardPage() {
       .select()
       .from(Invoices)
       .innerJoin(Customers, eq(Invoices.customerId, Customers.id))
-      .where(eq(Invoices.organizationId, orgId));
+      .where(eq(Invoices.organizationId, orgId))
+      .limit(INVOICE_PER_PAGE)
+      .offset(offset);
   } else {
     results = await db
       .select()
       .from(Invoices)
       .innerJoin(Customers, eq(Invoices.customerId, Customers.id))
-      .where(and(eq(Invoices.userId, userId), isNull(Invoices.organizationId)));
+      .where(and(eq(Invoices.userId, userId), isNull(Invoices.organizationId)))
+      .limit(INVOICE_PER_PAGE)
+      .offset(offset);
   }
 
   const invoices = results?.map(({ invoices, customers }) => {
@@ -119,6 +134,9 @@ export default async function DashboardPage() {
             ))}
           </TableBody>
         </Table>
+        <Suspense fallback={<>Loading...</>}>
+          <Pagination currentPage={currentPage} INVOICE_PER_PAGE={INVOICE_PER_PAGE} />
+        </Suspense>
       </Container>
     </main>
   );
