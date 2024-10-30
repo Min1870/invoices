@@ -7,11 +7,27 @@ import { and, eq, isNull } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import Stripe from "stripe";
+import { Resend } from "resend";
+import { currentUser } from "@clerk/nextjs/server";
+
+import InvoiceCreatedEmail from "@/emails/invoice-created";
 
 const stripe = new Stripe(String(process.env.STRIPE_API_SECRET));
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+const toPascalCase = (slug: string) => {
+  return slug
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
 
 export async function createInvoice(formData: FormData) {
-  const { userId, orgId } = await auth();
+  const user = await currentUser();
+  const { userId, orgId, orgSlug } = await auth();
+  const displayOrgName = orgSlug ? toPascalCase(orgSlug) : null;
+  const fromUserOrOrg = displayOrgName ? displayOrgName : user?.fullName;
+
   if (!userId) return;
 
   const value = Math.floor(parseFloat(String(formData.get("value"))) * 100);
@@ -44,6 +60,16 @@ export async function createInvoice(formData: FormData) {
     .returning({
       id: Invoices.id,
     });
+
+  const { data, error } = await resend.emails.send({
+    from: "Pete <onboarding@resend.dev>",
+    to: [email],
+    subject: "You Have an new Invoice",
+    react: InvoiceCreatedEmail({
+      invoiceId: results[0].id,
+      fromUserOrOrg: fromUserOrOrg!,
+    }),
+  });
 
   redirect(`/invoices/${results[0].id}`);
 }
