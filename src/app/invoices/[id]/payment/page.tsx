@@ -14,7 +14,7 @@ import Stripe from "stripe";
 const stripe = new Stripe(String(process.env.STRIPE_API_SECRET));
 
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }>;
   searchParams: Promise<{ status: string; session_id: string }>;
 }
 
